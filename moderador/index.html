@@ -239,6 +239,12 @@ html, body {
       <div class="ci-movie" id="ci-movie">—</div>
     </div>
 
+    <!-- Bullet controls (visibles solo en caso_activo) -->
+    <div id="bullet-controls" style="display:none; margin-bottom:8px;">
+      <div class="panel-title" style="margin-bottom:8px;">Revelar datos en pantalla</div>
+      <div id="bullet-btns" style="display:flex; flex-direction:column; gap:6px;"></div>
+    </div>
+
     <!-- Flow buttons -->
     <div class="flow-buttons">
       <button class="flow-btn fb-video" id="btn-video" onclick="doAction('caso_activo')">
@@ -386,6 +392,16 @@ function initPanel() {
     updateCasoInfo();
     updateFlowButtons();
     startVoteListener(casoActual);
+
+    // Show/hide bullet controls
+    const bc = document.getElementById('bullet-controls');
+    if (estado === 'caso_activo') {
+      bc.style.display = 'block';
+      buildBulletControls(casoActual);
+      updateBulletDisplay(ev.bullets_revelados || 0);
+    } else {
+      bc.style.display = 'none';
+    }
   });
 
   // Listen to scores
@@ -427,9 +443,63 @@ function updateFlowButtons() {
   document.getElementById('btn-winner').classList.toggle('fb-active', estado === 'revelando_ganador');
 }
 
+// ── Bullet controls ──
+let bulletsCurrent = 0;
+
+function buildBulletControls(casoNum) {
+  const caso = CASOS_DATA[casoNum];
+  if (!caso) return;
+  const cont = document.getElementById('bullet-btns');
+  cont.innerHTML = '';
+  const labels = ['Identidad', 'Síntoma 1', 'Síntoma 2', 'Nivel B6', 'Microbiota', 'Labs'];
+  caso.bullets.forEach((b, i) => {
+    const btn = document.createElement('button');
+    btn.id = `bbtn-${i}`;
+    btn.style.cssText = `
+      background:var(--surface2); border:1px solid rgba(201,168,76,0.2);
+      border-radius:8px; padding:8px 12px; color:var(--gold-light);
+      font-size:0.78em; cursor:pointer; display:flex; align-items:center; gap:8px;
+      transition:all 0.2s; text-align:left;`;
+    btn.innerHTML = `<span id="bico-${i}" style="font-size:1em;">⬜</span>
+      <span><strong style="color:var(--gold)">${labels[i]}</strong> — ${b.titulo || b.nombre || b.texto || ''}</span>`;
+    btn.onclick = () => revealUpTo(i + 1);
+    cont.appendChild(btn);
+  });
+  // Reset button
+  const rst = document.createElement('button');
+  rst.style.cssText = `background:var(--err);border:none;border-radius:8px;padding:8px 12px;color:#fff;font-size:0.75em;cursor:pointer;margin-top:4px;`;
+  rst.textContent = '↺ Ocultar todos';
+  rst.onclick = () => revealUpTo(0);
+  cont.appendChild(rst);
+}
+
+function revealUpTo(n) {
+  bulletsCurrent = n;
+  db.ref('evento/bullets_revelados').set(n);
+  for (let i = 0; i < 6; i++) {
+    const ico = document.getElementById(`bico-${i}`);
+    if (ico) ico.textContent = i < n ? '✅' : '⬜';
+    const btn = document.getElementById(`bbtn-${i}`);
+    if (btn) btn.style.background = i < n ? 'rgba(78,141,94,0.15)' : 'var(--surface2)';
+  }
+}
+
+function updateBulletDisplay(n) {
+  bulletsCurrent = n;
+  for (let i = 0; i < 6; i++) {
+    const ico = document.getElementById(`bico-${i}`);
+    if (ico) ico.textContent = i < n ? '✅' : '⬜';
+    const btn = document.getElementById(`bbtn-${i}`);
+    if (btn) btn.style.background = i < n ? 'rgba(78,141,94,0.15)' : 'var(--surface2)';
+  }
+}
+
 // ── Actions ──
 function doAction(newEstado) {
   const updates = { 'evento/estado': newEstado, 'evento/caso_actual': casoActual };
+  if (newEstado === 'caso_activo') {
+    updates['evento/bullets_revelados'] = 0;
+  }
 
   if (newEstado === 'votacion_cerrada') {
     calcularPuntajes();

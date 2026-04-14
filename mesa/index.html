@@ -179,6 +179,7 @@ html, body {
   background: var(--surface); border-radius: 10px; padding: 10px 14px;
 }
 .score-row.mine { border: 1px solid var(--gold); }
+@keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 .sr-rank { width: 22px; font-size: 0.85em; opacity: 0.45; text-align: center; }
 .sr-name { flex: 1; font-size: 0.9em; }
 .sr-pts { font-weight: 700; color: var(--gold); font-size: 0.95em; }
@@ -205,13 +206,14 @@ html, body {
   <div class="pulse-dot"></div>
 </div>
 
-<!-- ─── Caso activo ─── -->
+<!-- ─── Caso activo (con bullets progresivos) ─── -->
 <div class="screen" id="s-caso">
   <div class="num-label" id="caso-num-lbl"></div>
   <div class="caso-name" id="caso-name"></div>
   <div class="caso-movie" id="caso-movie"></div>
-  <div class="watch-box">
-    <p>👁️ Observa la pantalla principal<br>y prepara tu diagnóstico.</p>
+  <div id="mesa-bullets" style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;margin-top:12px;"></div>
+  <div class="watch-box" style="margin-top:10px;">
+    <p>👁️ Sigue la pantalla principal<br>y prepara tu diagnóstico.</p>
   </div>
 </div>
 
@@ -317,6 +319,7 @@ function startListening() {
         document.getElementById('caso-num-lbl').textContent = `Caso Clínico ${ev.caso_actual} de ${TOTAL_CASOS}`;
         document.getElementById('caso-name').textContent = caso.titulo;
         document.getElementById('caso-movie').textContent = caso.pelicula;
+        renderMesaBullets(caso, ev.bullets_revelados || 0);
         show('s-caso'); break;
 
       case 'votacion_abierta':
@@ -366,6 +369,40 @@ function renderVoting(caso, casoNum) {
     b.innerHTML = `<span class="letra">${letra}</span><span class="txt">${txt}</span>`;
     b.onclick = () => votar(letra, casoNum);
     cont.appendChild(b);
+  });
+}
+
+// ── Render bullets en mesa (lista vertical) ──
+function renderMesaBullets(caso, n) {
+  const cont = document.getElementById('mesa-bullets');
+  if (!cont) return;
+  cont.innerHTML = '';
+  caso.bullets.forEach((b, i) => {
+    if (i >= n) return;
+    const el = document.createElement('div');
+    el.style.cssText = `
+      background:var(--surface); border:1px solid rgba(201,168,76,${b.tipo==='nivel_alerta'?'0.6':'0.2'});
+      border-radius:10px; padding:10px 14px;
+      font-family:-apple-system,sans-serif; font-size:0.8em;
+      animation:slideIn 0.4s ease;
+      ${b.tipo==='nivel_alerta'?'background:rgba(58,46,16,0.8);':''}`;
+
+    if (b.tipo === 'identidad') {
+      el.innerHTML = `<strong style="color:var(--gold);font-size:1.05em;">${b.nombre}</strong> · ${b.edad}<br>
+        <span style="opacity:0.5;font-size:0.9em;">${b.ocupacion} · ${b.ciudad}</span>`;
+    } else if (b.tipo === 'sintoma') {
+      el.innerHTML = `${b.icono} <strong style="color:var(--gold-light)">${b.titulo}</strong><br>
+        <span style="opacity:0.55;">${b.detalle}</span>`;
+    } else if (b.tipo === 'nivel_alerta') {
+      el.innerHTML = `<strong style="color:var(--gold)">${b.titulo}</strong><br>
+        <span style="color:var(--gold);font-size:1.05em;">${b.valor}</span>`;
+    } else if (b.tipo === 'nivel') {
+      el.innerHTML = `<strong style="color:var(--gold-light)">${b.titulo}</strong><br>
+        <span style="opacity:0.7;">${b.valor}</span>`;
+    } else if (b.tipo === 'labs') {
+      el.innerHTML = `<span style="opacity:0.65;">${b.texto}</span>`;
+    }
+    cont.appendChild(el);
   });
 }
 
