@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Premios Enteronorma 2026 · Mesa</title>
+<style>
+:root {
+  --bg: #0C0A06;
+  --gold: #C9A84C;
+  --gold-light: #E8D9B0;
+  --surface: #181410;
+  --surface2: #241e14;
+  --ok: #5B9E6A;
+  --err: #B55A6A;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  height: 100%; background: var(--bg); color: var(--gold-light);
+  font-family: -apple-system, 'Segoe UI', sans-serif; overflow: hidden;
+}
+
+/* ── Screens ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px 20px; gap: 0;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ── Selector de mesa ── */
+#s-selector h1 {
+  font-family: Georgia, serif; font-size: 1.35em; color: var(--gold);
+  margin-bottom: 6px; text-align: center; letter-spacing: 1px;
+}
+#s-selector p { font-size: 0.85em; opacity: 0.55; margin-bottom: 22px; }
+.mesa-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 10px; max-width: 320px; width: 100%;
+}
+.mesa-btn {
+  aspect-ratio: 1; background: var(--surface); border: 2px solid var(--gold);
+  border-radius: 12px; color: var(--gold); font-size: 1.15em; font-weight: bold;
+  cursor: pointer; transition: all 0.15s; font-family: Georgia, serif;
+}
+.mesa-btn:active, .mesa-btn:focus { background: var(--gold); color: var(--bg); transform: scale(0.94); outline: none; }
+
+/* ── Waiting ── */
+#s-waiting { gap: 12px; }
+.pw-crown { font-size: 3em; margin-bottom: 4px; }
+#s-waiting h2 {
+  font-family: Georgia, serif; font-size: 1.15em; color: var(--gold);
+  text-align: center; line-height: 1.4;
+}
+.mesa-tag {
+  font-size: 0.75em; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.55; margin-top: -4px;
+}
+.score-pill {
+  background: var(--surface); border: 1px solid var(--gold);
+  border-radius: 50px; padding: 10px 28px; text-align: center; margin-top: 8px;
+}
+.score-pill .num { font-size: 2em; font-weight: 700; color: var(--gold); line-height: 1; }
+.score-pill .lbl { font-size: 0.7em; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+.pulse-dot {
+  width: 8px; height: 8px; background: var(--gold); border-radius: 50%;
+  margin-top: 20px; opacity: 0.4; animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:0.2;transform:scale(1)} 50%{opacity:1;transform:scale(1.6)} }
+
+/* ── Caso activo ── */
+#s-caso { gap: 10px; }
+#s-caso .num-label {
+  font-size: 0.7em; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.6;
+}
+#s-caso .caso-name {
+  font-family: Georgia, serif; font-size: 2em; color: var(--gold-light);
+  text-align: center; line-height: 1.2;
+}
+#s-caso .caso-movie {
+  font-style: italic; color: var(--gold); opacity: 0.75; font-size: 1em;
+}
+.watch-box {
+  background: var(--surface); border: 1px solid var(--surface2);
+  border-radius: 14px; padding: 18px 22px; text-align: center;
+  max-width: 290px; margin-top: 12px; line-height: 1.6;
+}
+.watch-box p { font-size: 0.85em; opacity: 0.65; }
+
+/* ── Votación ── */
+#s-voting { gap: 14px; justify-content: flex-start; padding-top: 40px; }
+.vote-header {
+  background: var(--surface); border-radius: 12px;
+  padding: 14px 18px; text-align: center; max-width: 340px; width: 100%;
+}
+.vote-header .qnum { font-size: 0.7em; opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; }
+.vote-header .qtxt { font-size: 0.9em; line-height: 1.5; margin-top: 4px; }
+.opciones {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; width: 100%; max-width: 340px;
+}
+.op-btn {
+  background: var(--surface); border: 2px solid var(--gold);
+  border-radius: 16px; padding: 16px 12px;
+  color: var(--gold-light); cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column; gap: 5px; text-align: left;
+}
+.op-btn .letra { font-size: 1.5em; font-weight: 700; color: var(--gold); font-family: Georgia, serif; line-height: 1; }
+.op-btn .txt { font-size: 0.75em; line-height: 1.35; opacity: 0.85; }
+.op-btn:active { background: var(--gold); color: var(--bg); transform: scale(0.96); }
+.op-btn:active .letra { color: var(--bg); }
+.op-btn.selected { background: var(--gold); color: var(--bg); }
+.op-btn.selected .letra { color: var(--bg); }
+
+/* ── Votado ── */
+#s-voted { gap: 16px; }
+.vote-circle {
+  width: 88px; height: 88px; background: var(--surface); border: 3px solid var(--gold);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: Georgia, serif; font-size: 2.6em; font-weight: 700; color: var(--gold);
+}
+#s-voted h2 { font-family: Georgia, serif; font-size: 1.3em; color: var(--gold); }
+#s-voted p { font-size: 0.85em; opacity: 0.5; text-align: center; }
+
+/* ── Resultado ── */
+#s-result { gap: 14px; }
+.result-icon-big { font-size: 3.5em; }
+#s-result h2 { font-family: Georgia, serif; font-size: 1.4em; }
+#s-result.ok h2 { color: var(--ok); }
+#s-result.err h2 { color: var(--err); }
+.result-card {
+  background: var(--surface); border-radius: 14px;
+  padding: 16px 20px; max-width: 310px; line-height: 1.6;
+  font-size: 0.85em;
+}
+#s-result.ok .result-card { border: 1px solid var(--ok); }
+#s-result.err .result-card { border: 1px solid var(--gold); }
+
+/* ── Terna ── */
+#s-terna, #s-winner { gap: 16px; }
+#s-terna h2, #s-winner h2 {
+  font-family: Georgia, serif; color: var(--gold); font-size: 1.1em;
+  text-transform: uppercase; letter-spacing: 2px; text-align: center;
+}
+.terna-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+.terna-card {
+  background: var(--surface); border: 1px solid var(--gold);
+  border-radius: 12px; padding: 14px 20px;
+  font-family: Georgia, serif; font-size: 1.05em; color: var(--gold-light);
+  opacity: 0; transform: translateY(16px); transition: all 0.5s ease;
+}
+.terna-card.show { opacity: 1; transform: translateY(0); }
+.terna-card.mine { background: var(--gold); color: var(--bg); font-weight: 700; }
+
+/* ── Winner ── */
+.winner-ring {
+  width: 130px; height: 130px; background: var(--gold); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: Georgia, serif; font-size: 1.1em; font-weight: 700;
+  color: var(--bg); text-align: center; line-height: 1.3;
+  box-shadow: 0 0 50px rgba(201,168,76,0.45);
+  animation: pop 0.6s cubic-bezier(.36,.07,.19,.97);
+}
+@keyframes pop { 0%{transform:scale(0.3);opacity:0} 80%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+#s-winner p { font-size: 0.9em; opacity: 0.65; text-align: center; }
+#s-winner .congrats { color: var(--gold); opacity: 1; font-weight: 600; }
+
+/* ── Scoreboard ── */
+#s-score { justify-content: flex-start; padding-top: 36px; gap: 12px; }
+#s-score h2 {
+  font-family: Georgia, serif; color: var(--gold); font-size: 1.1em;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.score-rows { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 7px; max-height: 70vh; overflow-y: auto; }
+.score-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border-radius: 10px; padding: 10px 14px;
+}
+.score-row.mine { border: 1px solid var(--gold); }
+.sr-rank { width: 22px; font-size: 0.85em; opacity: 0.45; text-align: center; }
+.sr-name { flex: 1; font-size: 0.9em; }
+.sr-pts { font-weight: 700; color: var(--gold); font-size: 0.95em; }
+</style>
+</head>
+<body>
+
+<!-- ─── Selector de Mesa ─── -->
+<div class="screen active" id="s-selector">
+  <h1>Premios Enteronorma 2026</h1>
+  <p>Selecciona tu mesa para comenzar</p>
+  <div class="mesa-grid" id="mesa-grid"></div>
+</div>
+
+<!-- ─── Waiting ─── -->
+<div class="screen" id="s-waiting">
+  <div class="pw-crown">🏆</div>
+  <h2 id="waiting-msg">Esperando el inicio del evento</h2>
+  <div class="mesa-tag" id="waiting-mesa"></div>
+  <div class="score-pill">
+    <div class="num" id="waiting-pts">0</div>
+    <div class="lbl">puntos</div>
+  </div>
+  <div class="pulse-dot"></div>
+</div>
+
+<!-- ─── Caso activo ─── -->
+<div class="screen" id="s-caso">
+  <div class="num-label" id="caso-num-lbl"></div>
+  <div class="caso-name" id="caso-name"></div>
+  <div class="caso-movie" id="caso-movie"></div>
+  <div class="watch-box">
+    <p>👁️ Observa la pantalla principal<br>y prepara tu diagnóstico.</p>
+  </div>
+</div>
+
+<!-- ─── Votación abierta ─── -->
+<div class="screen" id="s-voting">
+  <div class="vote-header">
+    <div class="qnum" id="vote-case-num"></div>
+    <div class="qtxt" id="vote-pregunta"></div>
+  </div>
+  <div class="opciones" id="opciones"></div>
+</div>
+
+<!-- ─── Ya votaste ─── -->
+<div class="screen" id="s-voted">
+  <div class="vote-circle" id="voted-letra">A</div>
+  <h2>¡Voto registrado!</h2>
+  <p>Espera los resultados<br>en la pantalla principal</p>
+</div>
+
+<!-- ─── Resultado ─── -->
+<div class="screen" id="s-result">
+  <div class="result-icon-big" id="result-icon">✅</div>
+  <h2 id="result-title"></h2>
+  <div class="result-card" id="result-card"></div>
+  <div class="score-pill">
+    <div class="num" id="result-pts">0</div>
+    <div class="lbl">puntos acumulados</div>
+  </div>
+</div>
+
+<!-- ─── Terna ─── -->
+<div class="screen" id="s-terna">
+  <h2>🏆 Finalistas del caso</h2>
+  <div class="terna-cards" id="terna-cards"></div>
+</div>
+
+<!-- ─── Ganador ─── -->
+<div class="screen" id="s-winner">
+  <h2>✨ Ganador del caso</h2>
+  <div class="winner-ring" id="winner-ring">Mesa ?</div>
+  <p id="winner-msg"></p>
+</div>
+
+<!-- ─── Scoreboard ─── -->
+<div class="screen" id="s-score">
+  <h2>🎬 Marcador general</h2>
+  <div class="score-rows" id="score-rows"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+// ── State ──
+let mesaId = null, mesaNombre = null, votoActual = null, casoAnterior = null;
+
+// ── Build mesa selector ──
+const grid = document.getElementById('mesa-grid');
+for (let i = 1; i <= NUM_MESAS; i++) {
+  const b = document.createElement('button');
+  b.className = 'mesa-btn'; b.textContent = i;
+  b.onclick = () => selectMesa(i);
+  grid.appendChild(b);
+}
+
+function selectMesa(n) {
+  mesaId = `mesa_${String(n).padStart(2,'0')}`;
+  mesaNombre = `Mesa ${n}`;
+  document.getElementById('waiting-mesa').textContent = mesaNombre;
+  db.ref(`mesas/${mesaId}`).once('value', s => {
+    if (!s.exists()) db.ref(`mesas/${mesaId}`).set({ nombre: mesaNombre, puntaje: 0 });
+  });
+  show('s-waiting');
+  startListening();
+}
+
+// ── Screen helper ──
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Firebase listeners ──
+function startListening() {
+  db.ref('evento').on('value', snap => {
+    const ev = snap.val(); if (!ev) return;
+    const caso = CASOS_DATA[ev.caso_actual];
+
+    // Reset vote when new case starts
+    if (ev.caso_actual !== casoAnterior) { votoActual = null; casoAnterior = ev.caso_actual; }
+
+    switch (ev.estado) {
+      case 'espera':
+        document.getElementById('waiting-msg').textContent = 'Bienvenido a Premios Enteronorma 2026';
+        show('s-waiting'); votoActual = null; break;
+
+      case 'entre_casos':
+        document.getElementById('waiting-msg').textContent = `Preparando Caso ${ev.caso_actual}…`;
+        show('s-waiting'); break;
+
+      case 'caso_activo':
+        if (!caso) break;
+        document.getElementById('caso-num-lbl').textContent = `Caso Clínico ${ev.caso_actual} de ${TOTAL_CASOS}`;
+        document.getElementById('caso-name').textContent = caso.titulo;
+        document.getElementById('caso-movie').textContent = caso.pelicula;
+        show('s-caso'); break;
+
+      case 'votacion_abierta':
+        if (votoActual) { show('s-voted'); break; }
+        if (!caso) break;
+        renderVoting(caso, ev.caso_actual);
+        show('s-voting'); break;
+
+      case 'votacion_cerrada':
+        if (votoActual && caso) showResult(votoActual, caso);
+        else { document.getElementById('waiting-msg').textContent = 'Votación cerrada'; show('s-waiting'); }
+        break;
+
+      case 'revelando_terna':
+        db.ref(`casos/${ev.caso_actual}/terna`).once('value', s => {
+          renderTerna(s.val() || []);
+        });
+        show('s-terna'); break;
+
+      case 'revelando_ganador':
+        db.ref(`casos/${ev.caso_actual}/ganador`).once('value', s => {
+          renderWinner(s.val());
+        });
+        show('s-winner'); break;
+
+      case 'scoreboard': case 'final':
+        renderScoreboard(); show('s-score'); break;
+    }
+  });
+
+  // Live score update
+  db.ref(`mesas/${mesaId}/puntaje`).on('value', s => {
+    const pts = s.val() || 0;
+    document.getElementById('waiting-pts').textContent = pts;
+    document.getElementById('result-pts').textContent = pts;
+  });
+}
+
+// ── Render voting options ──
+function renderVoting(caso, casoNum) {
+  document.getElementById('vote-case-num').textContent = `Caso ${casoNum} — ${caso.pelicula}`;
+  document.getElementById('vote-pregunta').textContent = caso.pregunta;
+  const cont = document.getElementById('opciones'); cont.innerHTML = '';
+  Object.entries(caso.opciones).forEach(([letra, txt]) => {
+    const b = document.createElement('button');
+    b.className = 'op-btn';
+    b.innerHTML = `<span class="letra">${letra}</span><span class="txt">${txt}</span>`;
+    b.onclick = () => votar(letra, casoNum);
+    cont.appendChild(b);
+  });
+}
+
+// ── Submit vote ──
+function votar(letra, casoNum) {
+  if (votoActual) return;
+  votoActual = letra;
+  document.getElementById('voted-letra').textContent = letra;
+  db.ref(`casos/${casoNum}/votos/${mesaId}`).set(letra);
+  show('s-voted');
+}
+
+// ── Show result ──
+function showResult(miVoto, caso) {
+  const correcto = miVoto === caso.respuesta_correcta;
+  const screen = document.getElementById('s-result');
+  screen.className = 'screen active ' + (correcto ? 'ok' : 'err');
+  document.getElementById('result-icon').textContent = correcto ? '✅' : '❌';
+  document.getElementById('result-title').textContent = correcto ? '¡Correcto!' : 'Incorrecto';
+  const txtCorr = caso.opciones[caso.respuesta_correcta];
+  document.getElementById('result-card').innerHTML =
+    `<strong>Respuesta correcta: ${caso.respuesta_correcta}</strong><br>${txtCorr}` +
+    (!correcto ? `<br><br><em>Tu respuesta: ${miVoto}</em>` : '');
+  show('s-result');
+}
+
+// ── Render terna ──
+function renderTerna(terna) {
+  const cont = document.getElementById('terna-cards'); cont.innerHTML = '';
+  terna.forEach((id, i) => {
+    const el = document.createElement('div');
+    el.className = 'terna-card' + (id === mesaId ? ' mine' : '');
+    const n = parseInt(id.replace('mesa_', ''));
+    el.textContent = id === mesaId ? `⭐ Mesa ${n} — ¡Eres finalista!` : `Mesa ${n}`;
+    cont.appendChild(el);
+    setTimeout(() => el.classList.add('show'), i * 500 + 100);
+  });
+}
+
+// ── Render winner ──
+function renderWinner(ganador) {
+  if (!ganador) return;
+  const n = parseInt(ganador.replace('mesa_', ''));
+  document.getElementById('winner-ring').textContent = `Mesa\n${n}`;
+  const msg = document.getElementById('winner-msg');
+  if (ganador === mesaId) {
+    msg.className = 'congrats'; msg.textContent = '🎉 ¡Tu mesa ganó este caso!';
+  } else {
+    msg.className = ''; msg.textContent = `Mesa ${n} es la mejor en este caso`;
+  }
+}
+
+// ── Render scoreboard ──
+function renderScoreboard() {
+  db.ref('mesas').once('value', snap => {
+    const mesas = snap.val() || {};
+    const sorted = Object.entries(mesas)
+      .map(([id, d]) => ({ id, nombre: d.nombre || id, pts: d.puntaje || 0 }))
+      .sort((a, b) => b.pts - a.pts);
+    const cont = document.getElementById('score-rows'); cont.innerHTML = '';
+    sorted.forEach((m, i) => {
+      const el = document.createElement('div');
+      el.className = 'score-row' + (m.id === mesaId ? ' mine' : '');
+      el.innerHTML = `<span class="sr-rank">${i+1}</span>
+        <span class="sr-name">${m.nombre}${m.id === mesaId ? ' ⭐' : ''}</span>
+        <span class="sr-pts">${m.pts} pts</span>`;
+      cont.appendChild(el);
+    });
+  });
+}
+</script>
+</body>
+</html>

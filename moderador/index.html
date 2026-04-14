@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premios Enteronorma 2026 · Moderador</title>
+<style>
+:root {
+  --bg: #0C0A06;
+  --gold: #C9A84C;
+  --gold-light: #E8D9B0;
+  --surface: #181410;
+  --surface2: #222018;
+  --ok: #4E8D5E;
+  --err: #933;
+  --blue: #3A6EA5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%; background: var(--bg); color: var(--gold-light);
+  font-family: -apple-system, 'Segoe UI', sans-serif; overflow: hidden;
+}
+
+/* ─── LOGIN ─── */
+#login-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; z-index: 100;
+}
+#login-screen h1 { font-family: Georgia, serif; color: var(--gold); font-size: 1.4em; text-align: center; }
+#login-screen p { font-size: 0.8em; opacity: 0.45; }
+.pin-display {
+  display: flex; gap: 10px; margin: 8px 0;
+}
+.pin-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--gold); background: transparent; transition: background 0.2s;
+}
+.pin-dot.filled { background: var(--gold); }
+.pin-pad {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; max-width: 220px; width: 100%;
+}
+.pp-btn {
+  background: var(--surface); border: 1px solid var(--surface2);
+  border-radius: 10px; padding: 18px; font-size: 1.3em;
+  color: var(--gold-light); cursor: pointer; transition: all 0.15s;
+  font-family: Georgia, serif;
+}
+.pp-btn:active { background: var(--gold); color: var(--bg); transform: scale(0.94); }
+.pp-btn.del { font-size: 0.9em; opacity: 0.6; }
+.pin-error { color: #B55; font-size: 0.8em; }
+
+/* ─── MAIN PANEL ─── */
+#main-panel {
+  display: none; height: 100vh; overflow: hidden;
+  grid-template-columns: 300px 1fr 260px;
+  grid-template-rows: 52px 1fr;
+  grid-template-areas: "header header header" "left center right";
+}
+#main-panel.visible { display: grid; }
+
+/* ─── HEADER ─── */
+.mod-header {
+  grid-area: header;
+  background: var(--surface); border-bottom: 1px solid rgba(201,168,76,0.15);
+  display: flex; align-items: center; padding: 0 20px; gap: 16px;
+}
+.mod-header .logo { font-family: Georgia, serif; color: var(--gold); font-size: 0.95em; }
+.mod-header .sep { flex: 1; }
+.status-pill {
+  background: rgba(201,168,76,0.1); border: 1px solid var(--gold);
+  border-radius: 20px; padding: 4px 14px; font-size: 0.75em;
+  color: var(--gold); letter-spacing: 1px;
+}
+.init-btn {
+  background: var(--blue); border: none; border-radius: 6px;
+  padding: 6px 14px; color: #fff; font-size: 0.75em; cursor: pointer;
+}
+.init-btn:hover { opacity: 0.85; }
+
+/* ─── LEFT PANEL: FLOW CONTROL ─── */
+.left-panel {
+  grid-area: left;
+  background: var(--surface); border-right: 1px solid rgba(201,168,76,0.1);
+  overflow-y: auto; padding: 16px;
+}
+.panel-title {
+  font-size: 0.65em; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.5; margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+}
+.caso-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.cs-btn {
+  background: var(--surface2); border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 6px; padding: 6px 10px; font-size: 0.8em;
+  color: var(--gold-light); cursor: pointer; transition: all 0.15s;
+}
+.cs-btn.active { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+.caso-info {
+  background: var(--surface2); border-radius: 10px; padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.ci-num { font-size: 0.65em; text-transform: uppercase; letter-spacing: 2px; opacity: 0.45; }
+.ci-name { font-family: Georgia, serif; font-size: 1.1em; color: var(--gold-light); margin-top: 2px; }
+.ci-movie { font-style: italic; font-size: 0.8em; color: var(--gold); opacity: 0.7; }
+
+.flow-buttons { display: flex; flex-direction: column; gap: 8px; }
+.flow-btn {
+  width: 100%; padding: 12px 16px; border-radius: 10px;
+  font-size: 0.85em; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  border: none;
+}
+.flow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.flow-btn .fb-icon { font-size: 1.1em; min-width: 20px; }
+.flow-btn .fb-label { flex: 1; }
+.flow-btn .fb-state { font-size: 0.7em; opacity: 0.5; }
+
+.fb-video   { background: #2A3B52; color: #9BC4E8; }
+.fb-vote    { background: #2A3A2A; color: #8FBF8F; }
+.fb-close   { background: #3A2A2A; color: #CF8F8F; }
+.fb-terna   { background: #3A3020; color: #CFB070; }
+.fb-winner  { background: #2A2040; color: #A090CF; }
+.fb-next    { background: var(--surface2); color: var(--gold-light); border: 1px solid rgba(201,168,76,0.2); }
+.fb-score   { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold); }
+.fb-active  { box-shadow: 0 0 0 2px currentColor; }
+
+.divider { height: 1px; background: rgba(201,168,76,0.1); margin: 8px 0; }
+
+/* ─── CENTER: VOTES MONITOR ─── */
+.center-panel {
+  grid-area: center; overflow-y: auto; padding: 16px 20px;
+}
+.vote-monitor { }
+.vm-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.vm-title { font-family: Georgia, serif; color: var(--gold); font-size: 1em; }
+.vm-count { font-size: 0.75em; opacity: 0.4; }
+.live-dot { width: 7px; height: 7px; background: var(--ok); border-radius: 50%; animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+.vote-option-row {
+  background: var(--surface); border-radius: 10px; padding: 14px 16px;
+  margin-bottom: 8px; position: relative; overflow: hidden;
+}
+.vor-fill {
+  position: absolute; inset: 0; background: rgba(201,168,76,0.08);
+  transform-origin: left; transition: transform 0.4s ease;
+}
+.vor-content { position: relative; display: flex; align-items: center; gap: 12px; }
+.vor-letra { font-family: Georgia, serif; font-size: 1.3em; color: var(--gold); min-width: 24px; }
+.vor-txt { flex: 1; font-size: 0.82em; line-height: 1.35; }
+.vor-bar-wrap { width: 100px; background: rgba(255,255,255,0.05); height: 5px; border-radius: 3px; }
+.vor-bar { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.4s; }
+.vor-count { font-size: 1em; font-weight: 700; color: var(--gold); min-width: 24px; text-align: right; }
+.correct-mark { color: var(--ok); font-size: 0.8em; }
+
+.mesa-votes { margin-top: 16px; }
+.mv-title { font-size: 0.65em; letter-spacing: 2px; text-transform: uppercase; opacity: 0.4; margin-bottom: 8px; }
+.mv-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.mv-cell {
+  background: var(--surface); border-radius: 8px; padding: 8px 6px;
+  text-align: center; border: 1px solid transparent; transition: all 0.2s;
+}
+.mv-cell .mv-num { font-size: 0.7em; opacity: 0.4; }
+.mv-cell .mv-voto { font-size: 1em; font-weight: 700; color: var(--gold); }
+.mv-cell.voted { border-color: rgba(201,168,76,0.3); }
+.mv-cell.correct { border-color: var(--ok); }
+.mv-cell.wrong { border-color: var(--err); opacity: 0.7; }
+
+/* ─── RIGHT: SCOREBOARD ─── */
+.right-panel {
+  grid-area: right;
+  background: var(--surface); border-left: 1px solid rgba(201,168,76,0.1);
+  overflow-y: auto; padding: 16px;
+}
+.score-entry {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px; border-radius: 8px; margin-bottom: 5px;
+  transition: all 0.3s;
+}
+.score-entry.top { background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); }
+.se-rank { font-size: 0.85em; width: 20px; opacity: 0.35; }
+.se-name { flex: 1; font-size: 0.85em; }
+.se-pts { font-weight: 700; color: var(--gold); font-size: 0.9em; }
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div id="login-screen">
+  <h1>Premios Enteronorma 2026<br><small style="font-size:0.6em;opacity:0.5">Panel de Moderador</small></h1>
+  <div class="pin-display" id="pin-display">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <p id="pin-error" class="pin-error"></p>
+  <div class="pin-pad">
+    <button class="pp-btn" onclick="pinKey(1)">1</button>
+    <button class="pp-btn" onclick="pinKey(2)">2</button>
+    <button class="pp-btn" onclick="pinKey(3)">3</button>
+    <button class="pp-btn" onclick="pinKey(4)">4</button>
+    <button class="pp-btn" onclick="pinKey(5)">5</button>
+    <button class="pp-btn" onclick="pinKey(6)">6</button>
+    <button class="pp-btn" onclick="pinKey(7)">7</button>
+    <button class="pp-btn" onclick="pinKey(8)">8</button>
+    <button class="pp-btn" onclick="pinKey(9)">9</button>
+    <button class="pp-btn del" onclick="pinClear()">✕</button>
+    <button class="pp-btn" onclick="pinKey(0)">0</button>
+    <button class="pp-btn del" onclick="pinBack()">⌫</button>
+  </div>
+</div>
+
+<!-- ─── MAIN PANEL ─── -->
+<div id="main-panel">
+  <!-- Header -->
+  <div class="mod-header">
+    <div class="logo">🎬 Moderador — Premios Enteronorma 2026</div>
+    <div class="sep"></div>
+    <div class="status-pill" id="status-pill">espera</div>
+    <button class="init-btn" onclick="initEvento()">⚙ Inicializar DB</button>
+  </div>
+
+  <!-- Left: Flow Control -->
+  <div class="left-panel">
+    <div class="panel-title">Control del evento</div>
+
+    <!-- Case selector -->
+    <div class="caso-selector" id="caso-selector"></div>
+
+    <!-- Current case info -->
+    <div class="caso-info">
+      <div class="ci-num" id="ci-num">Caso 0</div>
+      <div class="ci-name" id="ci-name">—</div>
+      <div class="ci-movie" id="ci-movie">—</div>
+    </div>
+
+    <!-- Flow buttons -->
+    <div class="flow-buttons">
+      <button class="flow-btn fb-video" id="btn-video" onclick="doAction('caso_activo')">
+        <span class="fb-icon">▶</span>
+        <div>
+          <div class="fb-label">Iniciar Video</div>
+          <div class="fb-state">→ caso_activo</div>
+        </div>
+      </button>
+
+      <button class="flow-btn fb-vote" id="btn-vote" onclick="doAction('votacion_abierta')">
+        <span class="fb-icon">🗳</span>
+        <div>
+          <div class="fb-label">Abrir Votación</div>
+          <div class="fb-state">→ votacion_abierta</div>
+        </div>
+      </button>
+
+      <button class="flow-btn fb-close" id="btn-close" onclick="doAction('votacion_cerrada')">
+        <span class="fb-icon">🔒</span>
+        <div>
+          <div class="fb-label">Cerrar Votación + Puntuar</div>
+          <div class="fb-state">→ votacion_cerrada</div>
+        </div>
+      </button>
+
+      <button class="flow-btn fb-terna" id="btn-terna" onclick="doAction('revelando_terna')">
+        <span class="fb-icon">🏅</span>
+        <div>
+          <div class="fb-label">Revelar Terna</div>
+          <div class="fb-state">→ revelando_terna</div>
+        </div>
+      </button>
+
+      <button class="flow-btn fb-winner" id="btn-winner" onclick="doAction('revelando_ganador')">
+        <span class="fb-icon">✨</span>
+        <div>
+          <div class="fb-label">Revelar Ganador</div>
+          <div class="fb-state">→ revelando_ganador</div>
+        </div>
+      </button>
+
+      <div class="divider"></div>
+
+      <button class="flow-btn fb-next" id="btn-next" onclick="nextCaso()">
+        <span class="fb-icon">⏭</span>
+        <div>
+          <div class="fb-label">Siguiente Caso</div>
+          <div class="fb-state" id="btn-next-label">Caso 2</div>
+        </div>
+      </button>
+
+      <button class="flow-btn fb-score" onclick="doAction('scoreboard')">
+        <span class="fb-icon">🏆</span>
+        <div>
+          <div class="fb-label">Mostrar Marcador</div>
+          <div class="fb-state">→ scoreboard</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Center: Vote monitor -->
+  <div class="center-panel">
+    <div class="vm-header">
+      <div class="live-dot"></div>
+      <div class="vm-title" id="vm-title">Monitor de votos</div>
+      <div class="vm-count" id="vm-count"></div>
+    </div>
+    <div id="vote-options"></div>
+    <div class="mesa-votes">
+      <div class="mv-title">Estado por mesa</div>
+      <div class="mv-grid" id="mv-grid"></div>
+    </div>
+  </div>
+
+  <!-- Right: Scoreboard -->
+  <div class="right-panel">
+    <div class="panel-title">Marcador</div>
+    <div id="score-list"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+// ── PIN ──
+const PIN = '2026';
+let pinInput = '';
+
+function pinKey(n) {
+  if (pinInput.length >= 4) return;
+  pinInput += n;
+  updatePinDisplay();
+  if (pinInput.length === 4) checkPin();
+}
+function pinBack() { pinInput = pinInput.slice(0,-1); updatePinDisplay(); }
+function pinClear() { pinInput = ''; updatePinDisplay(); }
+function updatePinDisplay() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`pd${i}`).classList.toggle('filled', i < pinInput.length);
+  }
+}
+function checkPin() {
+  if (pinInput === PIN) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-panel').classList.add('visible');
+    initPanel();
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto';
+    pinInput = ''; updatePinDisplay();
+    setTimeout(() => document.getElementById('pin-error').textContent = '', 1500);
+  }
+}
+
+// ── State ──
+let estado = 'espera';
+let casoActual = 1;
+let votosListener = null;
+
+// ── Init panel ──
+function initPanel() {
+  // Build caso selector
+  const sel = document.getElementById('caso-selector');
+  for (let i = 1; i <= TOTAL_CASOS; i++) {
+    const b = document.createElement('button');
+    b.className = 'cs-btn' + (i === 1 ? ' active' : '');
+    b.textContent = `C${i}`;
+    b.id = `cs-${i}`;
+    b.onclick = () => setCasoActual(i);
+    sel.appendChild(b);
+  }
+  updateCasoInfo();
+  buildMesaGrid();
+
+  // Listen to evento state
+  db.ref('evento').on('value', snap => {
+    const ev = snap.val(); if (!ev) return;
+    estado = ev.estado || 'espera';
+    casoActual = ev.caso_actual || 1;
+
+    document.getElementById('status-pill').textContent = estado;
+    updateCasoSelector(casoActual);
+    updateCasoInfo();
+    updateFlowButtons();
+    startVoteListener(casoActual);
+  });
+
+  // Listen to scores
+  db.ref('mesas').on('value', snap => {
+    updateScoreboard(snap.val() || {});
+  });
+}
+
+function setCasoActual(n) {
+  casoActual = n;
+  updateCasoSelector(n);
+  updateCasoInfo();
+  startVoteListener(n);
+}
+
+function updateCasoSelector(n) {
+  document.querySelectorAll('.cs-btn').forEach((b,i) => {
+    b.classList.toggle('active', i+1 === n);
+  });
+}
+
+function updateCasoInfo() {
+  const caso = CASOS_DATA[casoActual];
+  if (!caso) return;
+  document.getElementById('ci-num').textContent = `Caso ${casoActual} de ${TOTAL_CASOS}`;
+  document.getElementById('ci-name').textContent = caso.titulo;
+  document.getElementById('ci-movie').textContent = caso.pelicula;
+  document.getElementById('btn-next-label').textContent =
+    casoActual < TOTAL_CASOS ? `→ Caso ${casoActual + 1}` : '→ Marcador final';
+}
+
+function updateFlowButtons() {
+  const states = ['espera','entre_casos','caso_activo','votacion_abierta','votacion_cerrada','revelando_terna','revelando_ganador','scoreboard'];
+  const idx = states.indexOf(estado);
+  document.getElementById('btn-video').classList.toggle('fb-active', estado === 'caso_activo');
+  document.getElementById('btn-vote').classList.toggle('fb-active', estado === 'votacion_abierta');
+  document.getElementById('btn-close').classList.toggle('fb-active', estado === 'votacion_cerrada');
+  document.getElementById('btn-terna').classList.toggle('fb-active', estado === 'revelando_terna');
+  document.getElementById('btn-winner').classList.toggle('fb-active', estado === 'revelando_ganador');
+}
+
+// ── Actions ──
+function doAction(newEstado) {
+  const updates = { 'evento/estado': newEstado, 'evento/caso_actual': casoActual };
+
+  if (newEstado === 'votacion_cerrada') {
+    calcularPuntajes();
+  } else if (newEstado === 'revelando_terna') {
+    calcularTerna();
+  } else if (newEstado === 'revelando_ganador') {
+    seleccionarGanador();
+  }
+
+  db.ref().update(updates);
+}
+
+function nextCaso() {
+  if (casoActual < TOTAL_CASOS) {
+    casoActual++;
+    db.ref().update({
+      'evento/estado': 'entre_casos',
+      'evento/caso_actual': casoActual
+    });
+    updateCasoSelector(casoActual);
+    updateCasoInfo();
+  } else {
+    db.ref().update({ 'evento/estado': 'scoreboard' });
+  }
+}
+
+// ── Score calculation ──
+function calcularPuntajes() {
+  db.ref(`casos/${casoActual}/votos`).once('value', snap => {
+    const votos = snap.val() || {};
+    const respCorrecta = CASOS_DATA[casoActual]?.respuesta_correcta;
+    if (!respCorrecta) return;
+    Object.entries(votos).forEach(([mesaId, respuesta]) => {
+      if (respuesta === respCorrecta) {
+        db.ref(`mesas/${mesaId}/puntaje`).transaction(pts => (pts || 0) + 1);
+      }
+    });
+  });
+}
+
+// ── Terna calculation ──
+function calcularTerna() {
+  db.ref(`casos/${casoActual}/votos`).once('value', snap => {
+    const votos = snap.val() || {};
+    const respCorrecta = CASOS_DATA[casoActual]?.respuesta_correcta;
+    const correctas = Object.entries(votos)
+      .filter(([,v]) => v === respCorrecta)
+      .map(([id]) => id);
+
+    let terna = correctas;
+    if (correctas.length >= 3) {
+      // Randomly pick 3
+      terna = shuffle(correctas).slice(0, 3);
+    } else if (correctas.length < 3) {
+      // Fill with random incorrect voters
+      const incorrectas = Object.entries(votos)
+        .filter(([,v]) => v !== respCorrecta)
+        .map(([id]) => id);
+      terna = [...correctas, ...shuffle(incorrectas)].slice(0, 3);
+    }
+    db.ref(`casos/${casoActual}/terna`).set(terna);
+  });
+}
+
+// ── Winner selection ──
+function seleccionarGanador() {
+  db.ref(`casos/${casoActual}/terna`).once('value', snap => {
+    const terna = snap.val() || [];
+    if (terna.length === 0) return;
+    const ganador = terna[Math.floor(Math.random() * terna.length)];
+    db.ref(`casos/${casoActual}/ganador`).set(ganador);
+    // Bonus point to winner
+    db.ref(`mesas/${ganador}/puntaje`).transaction(pts => (pts || 0) + 1);
+  });
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── Vote listener ──
+function startVoteListener(casoNum) {
+  if (votosListener) {
+    db.ref(`casos/${casoNum}/votos`).off('value', votosListener);
+  }
+  const caso = CASOS_DATA[casoNum];
+  if (!caso) return;
+
+  // Build option rows
+  const optCont = document.getElementById('vote-options');
+  optCont.innerHTML = '';
+  document.getElementById('vm-title').textContent = `Caso ${casoNum} — ${caso.titulo}`;
+
+  Object.entries(caso.opciones).forEach(([letra, txt]) => {
+    optCont.innerHTML += `
+      <div class="vote-option-row">
+        <div class="vor-fill" id="vf-${letra}"></div>
+        <div class="vor-content">
+          <div class="vor-letra">${letra}${letra === caso.respuesta_correcta ? ' <span class="correct-mark">✓</span>' : ''}</div>
+          <div class="vor-txt">${txt}</div>
+          <div class="vor-bar-wrap"><div class="vor-bar" id="vbar-${letra}" style="width:0%"></div></div>
+          <div class="vor-count" id="vc-${letra}">0</div>
+        </div>
+      </div>`;
+  });
+
+  votosListener = snap => {
+    const votos = snap.val() || {};
+    const counts = {}; let total = 0;
+    Object.keys(caso.opciones).forEach(l => counts[l] = 0);
+    Object.values(votos).forEach(v => { if (counts[v] !== undefined) { counts[v]++; total++; } });
+    const max = Math.max(...Object.values(counts), 1);
+
+    Object.entries(counts).forEach(([letra, n]) => {
+      const vc = document.getElementById(`vc-${letra}`);
+      const vb = document.getElementById(`vbar-${letra}`);
+      const vf = document.getElementById(`vf-${letra}`);
+      if (vc) vc.textContent = n;
+      if (vb) vb.style.width = `${(n/max*100).toFixed(0)}%`;
+      if (vf) vf.style.transform = `scaleX(${n/max})`;
+    });
+
+    document.getElementById('vm-count').textContent = `${total} voto${total !== 1 ? 's' : ''}`;
+    updateMesaGrid(votos, caso.respuesta_correcta);
+  };
+
+  db.ref(`casos/${casoNum}/votos`).on('value', votosListener);
+}
+
+// ── Mesa grid ──
+function buildMesaGrid() {
+  const cont = document.getElementById('mv-grid'); cont.innerHTML = '';
+  for (let i = 1; i <= NUM_MESAS; i++) {
+    const id = `mesa_${String(i).padStart(2,'0')}`;
+    cont.innerHTML += `
+      <div class="mv-cell" id="mvc-${id}">
+        <div class="mv-num">${i}</div>
+        <div class="mv-voto" id="mvv-${id}">—</div>
+      </div>`;
+  }
+}
+
+function updateMesaGrid(votos, respCorrecta) {
+  Object.entries(votos).forEach(([mesaId, voto]) => {
+    const cell = document.getElementById(`mvc-${mesaId}`);
+    const label = document.getElementById(`mvv-${mesaId}`);
+    if (!cell || !label) return;
+    label.textContent = voto;
+    cell.className = 'mv-cell voted ' + (respCorrecta && estado === 'votacion_cerrada'
+      ? (voto === respCorrecta ? 'correct' : 'wrong') : '');
+  });
+}
+
+// ── Scoreboard ──
+function updateScoreboard(mesas) {
+  const sorted = Object.entries(mesas)
+    .map(([id, d]) => ({ id, nombre: d.nombre || id, pts: d.puntaje || 0 }))
+    .sort((a, b) => b.pts - a.pts);
+  const cont = document.getElementById('score-list'); cont.innerHTML = '';
+  sorted.forEach((m, i) => {
+    const el = document.createElement('div');
+    el.className = 'score-entry ' + (i < 3 ? 'top' : '');
+    el.innerHTML = `<span class="se-rank">${i+1}</span>
+      <span class="se-name">${m.nombre}</span>
+      <span class="se-pts">${m.pts}</span>`;
+    cont.appendChild(el);
+  });
+}
+
+// ── Initialize DB ──
+function initEvento() {
+  if (!confirm('¿Inicializar la base de datos del evento? Esto borrará todos los votos y puntajes.')) return;
+  const updates = {
+    'evento/estado': 'espera',
+    'evento/caso_actual': 1
+  };
+  // Init mesas
+  for (let i = 1; i <= NUM_MESAS; i++) {
+    const id = `mesa_${String(i).padStart(2,'0')}`;
+    updates[`mesas/${id}`] = { nombre: `Mesa ${i}`, puntaje: 0 };
+  }
+  // Init casos
+  for (let c = 1; c <= TOTAL_CASOS; c++) {
+    const caso = CASOS_DATA[c];
+    updates[`casos/${c}`] = {
+      titulo: caso.titulo,
+      pelicula: caso.pelicula,
+      opciones: caso.opciones,
+      respuesta_correcta: caso.respuesta_correcta,
+      votos: null, terna: null, ganador: null
+    };
+  }
+  db.ref().update(updates).then(() => alert('✅ Base de datos inicializada correctamente.'));
+}
+</script>
+</body>
+</html>

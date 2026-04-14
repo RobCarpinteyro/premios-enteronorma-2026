@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premios Enteronorma 2026 · Pantalla</title>
+<style>
+:root {
+  --bg: #0C0A06;
+  --gold: #C9A84C;
+  --gold-light: #E8D9B0;
+  --surface: #181410;
+  --ok: #5B9E6A;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%; background: var(--bg); color: var(--gold-light);
+  font-family: Georgia, serif; overflow: hidden;
+}
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.7s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ─── ESPERA ─── */
+#s-espera {
+  background: var(--bg);
+  background-image: radial-gradient(ellipse 80% 50% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%);
+}
+.espera-frame {
+  border: 1px solid rgba(201,168,76,0.3); border-radius: 4px;
+  padding: 60px 80px; text-align: center;
+  position: relative;
+}
+.espera-frame::before, .espera-frame::after {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; border-color: var(--gold); border-style: solid;
+}
+.espera-frame::before { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+.espera-frame::after  { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+.espera-supra {
+  font-size: 0.75em; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.6; margin-bottom: 16px;
+}
+.espera-title {
+  font-size: 3.2em; color: var(--gold-light); font-weight: 400; line-height: 1.15;
+  margin-bottom: 8px;
+}
+.espera-title span { color: var(--gold); }
+.espera-year { font-size: 1.2em; color: var(--gold); opacity: 0.7; letter-spacing: 6px; }
+.espera-divider {
+  width: 60px; height: 1px; background: var(--gold); opacity: 0.4;
+  margin: 24px auto;
+}
+.espera-sub { font-size: 0.85em; opacity: 0.4; font-style: italic; letter-spacing: 1px; }
+.espera-dots { display: flex; gap: 8px; justify-content: center; margin-top: 32px; }
+.espera-dots span {
+  width: 6px; height: 6px; background: var(--gold); border-radius: 50%; opacity: 0.3;
+  animation: dotpulse 2s infinite;
+}
+.espera-dots span:nth-child(2) { animation-delay: 0.3s; }
+.espera-dots span:nth-child(3) { animation-delay: 0.6s; }
+@keyframes dotpulse { 0%,100%{opacity:0.2} 50%{opacity:1} }
+
+/* ─── CASO ACTIVO (video) ─── */
+#s-caso { background: #000; padding: 0; }
+#caso-video {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.video-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(12,10,6,0.92));
+  padding: 40px 60px 32px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+.video-case-info {}
+.video-num { font-size: 0.7em; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); opacity: 0.7; }
+.video-name { font-size: 1.8em; color: var(--gold-light); margin-top: 4px; }
+.video-movie { font-style: italic; color: var(--gold); opacity: 0.8; font-size: 1em; margin-top: 2px; }
+.carnot-badge {
+  background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 6px; padding: 8px 16px; font-size: 0.75em;
+  color: var(--gold); letter-spacing: 1px;
+}
+
+/* ─── VOTACIÓN ABIERTA ─── */
+#s-voting { padding: 40px 60px; gap: 20px; }
+.voting-header { text-align: center; }
+.voting-header .caso-lbl { font-size: 0.75em; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); opacity: 0.6; }
+.voting-header .caso-title { font-size: 1.8em; color: var(--gold-light); margin-top: 4px; }
+.voting-header .caso-film { font-style: italic; color: var(--gold); opacity: 0.75; }
+.voting-header .pregunta {
+  font-size: 0.9em; opacity: 0.65; margin-top: 10px;
+  font-family: -apple-system, sans-serif;
+}
+.vote-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 900px; }
+.vote-bar-item {
+  background: var(--surface); border-radius: 14px; padding: 20px 24px;
+  border: 1px solid rgba(201,168,76,0.2); position: relative; overflow: hidden;
+}
+.vb-fill {
+  position: absolute; inset: 0; background: rgba(201,168,76,0.12);
+  transform-origin: left; transition: transform 0.6s ease; transform: scaleX(0);
+}
+.vb-fill.correct-fill { background: rgba(91,158,106,0.2); }
+.vb-content { position: relative; display: flex; align-items: center; gap: 16px; }
+.vb-letra {
+  font-size: 2em; font-weight: 700; color: var(--gold); min-width: 36px;
+}
+.vb-texto { font-family: -apple-system, sans-serif; font-size: 0.85em; line-height: 1.4; flex: 1; opacity: 0.85; }
+.vb-count {
+  font-size: 1.5em; font-weight: 700; color: var(--gold); min-width: 40px; text-align: right;
+}
+.vote-status {
+  font-size: 0.75em; opacity: 0.4; letter-spacing: 2px; text-transform: uppercase;
+  font-family: -apple-system, sans-serif;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+/* ─── VOTACIÓN CERRADA (resultados) ─── */
+#s-results { padding: 40px 60px; gap: 24px; }
+.results-header { text-align: center; }
+.results-title { font-size: 0.8em; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); opacity: 0.6; }
+.results-caso { font-size: 2em; margin-top: 6px; }
+.results-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 900px; }
+.rb-item {
+  background: var(--surface); border-radius: 14px; padding: 20px 24px;
+  border: 1px solid rgba(201,168,76,0.15); position: relative; overflow: hidden;
+  transition: border-color 0.5s;
+}
+.rb-item.correct { border-color: var(--ok); }
+.rb-fill {
+  position: absolute; inset: 0; background: rgba(201,168,76,0.1);
+  transform-origin: left; transition: transform 1s ease;
+}
+.rb-item.correct .rb-fill { background: rgba(91,158,106,0.2); }
+.rb-content { position: relative; display: flex; align-items: center; gap: 16px; }
+.rb-letra { font-size: 2em; font-weight: 700; color: var(--gold); min-width: 36px; }
+.rb-item.correct .rb-letra { color: var(--ok); }
+.rb-texto { font-family: -apple-system, sans-serif; font-size: 0.85em; line-height: 1.4; flex: 1; }
+.rb-count { font-size: 1.5em; font-weight: 700; color: var(--gold); min-width: 40px; text-align: right; }
+.rb-pct { font-size: 0.75em; opacity: 0.5; }
+.correct-badge {
+  background: var(--ok); color: #fff; border-radius: 4px;
+  padding: 2px 8px; font-size: 0.7em; letter-spacing: 1px;
+  font-family: sans-serif; margin-left: 8px; text-transform: uppercase;
+}
+
+/* ─── TERNA ─── */
+#s-terna { gap: 30px; }
+.terna-sup {
+  font-size: 0.8em; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.55;
+}
+.terna-title { font-size: 2.5em; color: var(--gold-light); text-align: center; }
+.terna-subtitle { font-style: italic; color: var(--gold); opacity: 0.65; font-size: 1.1em; }
+.terna-row { display: flex; gap: 24px; justify-content: center; margin-top: 10px; }
+.terna-card {
+  background: var(--surface); border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 18px; padding: 30px 40px; text-align: center; min-width: 200px;
+  opacity: 0; transform: translateY(30px) scale(0.95);
+  transition: all 0.6s cubic-bezier(.34,1.56,.64,1);
+}
+.terna-card.show { opacity: 1; transform: translateY(0) scale(1); }
+.terna-card .trophy { font-size: 2em; margin-bottom: 10px; }
+.terna-card .tc-name { font-size: 1.5em; color: var(--gold); }
+.terna-card .tc-desc { font-size: 0.75em; opacity: 0.45; margin-top: 4px; letter-spacing: 1px; }
+
+/* ─── GANADOR ─── */
+#s-winner { gap: 20px; }
+.winner-sup {
+  font-size: 0.75em; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); opacity: 0.55;
+}
+.winner-caso { font-style: italic; color: var(--gold); opacity: 0.65; }
+.winner-circle {
+  width: 220px; height: 220px; border-radius: 50%; background: var(--gold);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0 80px rgba(201,168,76,0.5), 0 0 160px rgba(201,168,76,0.2);
+  animation: winnerIn 0.8s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes winnerIn { from{transform:scale(0.3);opacity:0} to{transform:scale(1);opacity:1} }
+.winner-circle .wc-pre { font-size: 0.7em; color: rgba(12,10,6,0.7); letter-spacing: 2px; text-transform: uppercase; }
+.winner-circle .wc-name { font-size: 2.5em; font-weight: 700; color: var(--bg); line-height: 1; margin-top: 4px; }
+.winner-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.particle {
+  position: absolute; width: 8px; height: 8px; background: var(--gold);
+  border-radius: 50%; animation: fly 2s ease-out forwards;
+}
+@keyframes fly {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* ─── SCOREBOARD ─── */
+#s-score { padding: 60px; gap: 24px; }
+.score-sup { font-size: 0.75em; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); opacity: 0.5; }
+.score-title { font-size: 2em; color: var(--gold-light); }
+.score-table { width: 100%; max-width: 700px; }
+.score-row-h {
+  display: flex; align-items: center; padding: 0 20px 10px;
+  font-size: 0.7em; text-transform: uppercase; letter-spacing: 2px; opacity: 0.35;
+  font-family: sans-serif;
+}
+.sc-row {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border-radius: 12px; padding: 16px 20px;
+  margin-bottom: 8px; transition: all 0.3s;
+}
+.sc-row.top1 { border: 1px solid var(--gold); background: rgba(201,168,76,0.08); }
+.sc-rank { font-size: 1.1em; width: 30px; text-align: center; opacity: 0.5; }
+.sc-rank.top { opacity: 1; color: var(--gold); }
+.sc-name { flex: 1; font-size: 1em; }
+.sc-bar-wrap { width: 200px; background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; }
+.sc-bar { height: 100%; background: var(--gold); border-radius: 4px; transition: width 1s ease; }
+.sc-pts { font-size: 1.1em; font-weight: 700; color: var(--gold); min-width: 50px; text-align: right; }
+</style>
+</head>
+<body>
+
+<!-- ─── ESPERA ─── -->
+<div class="screen active" id="s-espera">
+  <div class="espera-frame">
+    <div class="espera-supra">Carnot Laboratorios presenta</div>
+    <div class="espera-title">Premios<br><span>Enteronorma</span></div>
+    <div class="espera-year">2 0 2 6</div>
+    <div class="espera-divider"></div>
+    <div class="espera-sub">Noche de casos clínicos</div>
+  </div>
+  <div class="espera-dots">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- ─── CASO ACTIVO (video) ─── -->
+<div class="screen" id="s-caso">
+  <video id="caso-video" autoplay playsinline muted></video>
+  <div class="video-overlay">
+    <div class="video-case-info">
+      <div class="video-num" id="vid-num"></div>
+      <div class="video-name" id="vid-name"></div>
+      <div class="video-movie" id="vid-movie"></div>
+    </div>
+    <div class="carnot-badge">Enteronorma B-Vit</div>
+  </div>
+</div>
+
+<!-- ─── VOTACIÓN ABIERTA ─── -->
+<div class="screen" id="s-voting">
+  <div class="voting-header">
+    <div class="caso-lbl" id="v-caso-lbl"></div>
+    <div class="caso-title" id="v-caso-title"></div>
+    <div class="caso-film" id="v-caso-film"></div>
+    <div class="pregunta" id="v-pregunta"></div>
+  </div>
+  <div class="vote-bars" id="vote-bars"></div>
+  <div class="vote-status">● Votación en curso</div>
+</div>
+
+<!-- ─── RESULTADOS ─── -->
+<div class="screen" id="s-results">
+  <div class="results-header">
+    <div class="results-title" id="r-lbl"></div>
+    <div class="results-caso" id="r-caso"></div>
+  </div>
+  <div class="results-bars" id="results-bars"></div>
+</div>
+
+<!-- ─── TERNA ─── -->
+<div class="screen" id="s-terna">
+  <div class="terna-sup">Caso <span id="terna-caso-n"></span></div>
+  <div class="terna-title">Y los finalistas son…</div>
+  <div class="terna-subtitle" id="terna-pelicula"></div>
+  <div class="terna-row" id="terna-row"></div>
+</div>
+
+<!-- ─── GANADOR ─── -->
+<div class="screen" id="s-winner">
+  <div class="winner-particles" id="particles"></div>
+  <div class="winner-sup">Ganador del caso <span id="winner-caso-n"></span></div>
+  <div class="winner-caso" id="winner-pelicula"></div>
+  <div class="winner-circle">
+    <div class="wc-pre">¡El ganador es!</div>
+    <div class="wc-name" id="winner-name">Mesa ?</div>
+  </div>
+</div>
+
+<!-- ─── SCOREBOARD ─── -->
+<div class="screen" id="s-score">
+  <div class="score-sup">Marcador general</div>
+  <div class="score-title">🏆 Premios Enteronorma 2026</div>
+  <div class="score-table" id="score-table"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../firebase-config.js"></script>
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+const BASE_URL = '../premios/videos/';
+let votesListener = null;
+let currentCaso = null;
+
+db.ref('evento').on('value', snap => {
+  const ev = snap.val(); if (!ev) return;
+  const caso = CASOS_DATA[ev.caso_actual];
+  currentCaso = ev.caso_actual;
+
+  // Detach previous vote listener
+  if (votesListener) {
+    db.ref(`casos/${currentCaso}/votos`).off('value', votesListener);
+    votesListener = null;
+  }
+
+  switch(ev.estado) {
+    case 'espera':
+      show('s-espera'); break;
+
+    case 'entre_casos':
+      show('s-espera');
+      document.querySelector('.espera-sub').textContent = `Preparando Caso ${ev.caso_actual}…`;
+      break;
+
+    case 'caso_activo':
+      if (!caso) break;
+      const vid = document.getElementById('caso-video');
+      vid.src = `${BASE_URL}${ev.caso_actual}.mp4`;
+      vid.load(); vid.play().catch(()=>{});
+      document.getElementById('vid-num').textContent = `Caso Clínico ${ev.caso_actual} de ${TOTAL_CASOS}`;
+      document.getElementById('vid-name').textContent = caso.titulo;
+      document.getElementById('vid-movie').textContent = caso.pelicula;
+      show('s-caso'); break;
+
+    case 'votacion_abierta':
+      if (!caso) break;
+      // Pause video
+      document.getElementById('caso-video').pause();
+      setupVoting(caso, ev.caso_actual);
+      show('s-voting');
+      // Start live listener
+      votesListener = function(vSnap) {
+        const votos = vSnap.val() || {};
+        updateVoteBars(votos, caso.opciones, null);
+      };
+      db.ref(`casos/${ev.caso_actual}/votos`).on('value', votesListener);
+      break;
+
+    case 'votacion_cerrada':
+      if (votesListener) {
+        db.ref(`casos/${currentCaso}/votos`).off('value', votesListener);
+        votesListener = null;
+      }
+      if (!caso) break;
+      db.ref(`casos/${ev.caso_actual}/votos`).once('value', vSnap => {
+        showResults(caso, ev.caso_actual, vSnap.val() || {});
+      });
+      show('s-results'); break;
+
+    case 'revelando_terna':
+      db.ref(`casos/${ev.caso_actual}/terna`).once('value', s => {
+        showTerna(ev.caso_actual, caso, s.val() || []);
+      });
+      show('s-terna'); break;
+
+    case 'revelando_ganador':
+      db.ref(`casos/${ev.caso_actual}/ganador`).once('value', s => {
+        showWinner(ev.caso_actual, caso, s.val());
+      });
+      show('s-winner'); break;
+
+    case 'scoreboard': case 'final':
+      showScoreboard(); show('s-score'); break;
+  }
+});
+
+// ── Setup voting screen ──
+function setupVoting(caso, casoNum) {
+  document.getElementById('v-caso-lbl').textContent = `Caso Clínico ${casoNum} de ${TOTAL_CASOS}`;
+  document.getElementById('v-caso-title').textContent = caso.titulo;
+  document.getElementById('v-caso-film').textContent = caso.pelicula;
+  document.getElementById('v-pregunta').textContent = caso.pregunta;
+
+  const cont = document.getElementById('vote-bars'); cont.innerHTML = '';
+  Object.entries(caso.opciones).forEach(([letra, txt]) => {
+    cont.innerHTML += `
+      <div class="vote-bar-item" id="vb-${letra}">
+        <div class="vb-fill" id="vbf-${letra}"></div>
+        <div class="vb-content">
+          <div class="vb-letra">${letra}</div>
+          <div class="vb-texto">${txt}</div>
+          <div class="vb-count" id="vbc-${letra}">0</div>
+        </div>
+      </div>`;
+  });
+}
+
+function updateVoteBars(votos, opciones, respCorrect) {
+  const counts = {}; let total = 0;
+  Object.keys(opciones).forEach(l => counts[l] = 0);
+  Object.values(votos).forEach(v => { if (counts[v] !== undefined) { counts[v]++; total++; } });
+  const max = Math.max(...Object.values(counts), 1);
+
+  Object.entries(counts).forEach(([letra, n]) => {
+    const countEl = document.getElementById(`vbc-${letra}`);
+    const fillEl = document.getElementById(`vbf-${letra}`);
+    if (countEl) countEl.textContent = n;
+    if (fillEl) {
+      fillEl.style.transform = `scaleX(${n / max})`;
+      if (respCorrect && letra === respCorrect) fillEl.classList.add('correct-fill');
+    }
+  });
+}
+
+// ── Results ──
+function showResults(caso, casoNum, votos) {
+  document.getElementById('r-lbl').textContent = '';
+  document.getElementById('r-caso').textContent = `${caso.titulo} — ${caso.pelicula}`;
+
+  const counts = {}; let total = 0;
+  Object.keys(caso.opciones).forEach(l => counts[l] = 0);
+  Object.values(votos).forEach(v => { if (counts[v] !== undefined) { counts[v]++; total++; } });
+  const max = Math.max(...Object.values(counts), 1);
+
+  const cont = document.getElementById('results-bars'); cont.innerHTML = '';
+  Object.entries(caso.opciones).forEach(([letra, txt]) => {
+    const n = counts[letra]; const pct = total ? Math.round(n/total*100) : 0;
+    const isCorrect = letra === caso.respuesta_correcta;
+    cont.innerHTML += `
+      <div class="rb-item ${isCorrect ? 'correct' : ''}" id="rb-${letra}">
+        <div class="rb-fill" style="transform:scaleX(${n/max})"></div>
+        <div class="rb-content">
+          <div class="rb-letra">${letra}${isCorrect ? '<span class="correct-badge">✓</span>' : ''}</div>
+          <div class="rb-texto">${txt}</div>
+          <div>
+            <div class="rb-count">${n}</div>
+            <div class="rb-pct">${pct}%</div>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+// ── Terna ──
+function showTerna(casoNum, caso, terna) {
+  document.getElementById('terna-caso-n').textContent = casoNum;
+  document.getElementById('terna-pelicula').textContent = caso ? caso.pelicula : '';
+  const row = document.getElementById('terna-row'); row.innerHTML = '';
+  const trophies = ['🥇','🥈','🥉'];
+  terna.forEach((id, i) => {
+    const n = parseInt(id.replace('mesa_', ''));
+    row.innerHTML += `
+      <div class="terna-card" id="tc-${i}">
+        <div class="trophy">${trophies[i] || '🏅'}</div>
+        <div class="tc-name">Mesa ${n}</div>
+        <div class="tc-desc">Finalista</div>
+      </div>`;
+    setTimeout(() => {
+      const el = document.getElementById(`tc-${i}`);
+      if (el) el.classList.add('show');
+    }, i * 700 + 300);
+  });
+}
+
+// ── Winner ──
+function showWinner(casoNum, caso, ganador) {
+  document.getElementById('winner-caso-n').textContent = casoNum;
+  document.getElementById('winner-pelicula').textContent = caso ? `— ${caso.pelicula} —` : '';
+  if (!ganador) return;
+  const n = parseInt(ganador.replace('mesa_', ''));
+  document.getElementById('winner-name').textContent = `Mesa ${n}`;
+  spawnParticles();
+}
+
+function spawnParticles() {
+  const cont = document.getElementById('particles'); cont.innerHTML = '';
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = Math.random() * 2 * Math.PI;
+    const dist = 200 + Math.random() * 400;
+    p.style.cssText = `
+      left: ${cx}px; top: ${cy}px;
+      background: ${Math.random() > 0.5 ? '#C9A84C' : '#E8D9B0'};
+      width: ${4 + Math.random() * 8}px; height: ${4 + Math.random() * 8}px;
+      --tx: ${Math.cos(angle) * dist}px; --ty: ${Math.sin(angle) * dist}px;
+      animation-duration: ${1.5 + Math.random()}s;
+      animation-delay: ${Math.random() * 0.5}s;
+    `;
+    cont.appendChild(p);
+  }
+}
+
+// ── Scoreboard ──
+function showScoreboard() {
+  db.ref('mesas').once('value', snap => {
+    const mesas = snap.val() || {};
+    const sorted = Object.entries(mesas)
+      .map(([id, d]) => ({ id, nombre: d.nombre || id, pts: d.puntaje || 0 }))
+      .sort((a, b) => b.pts - a.pts);
+    const maxPts = sorted[0]?.pts || 1;
+    const cont = document.getElementById('score-table'); cont.innerHTML = '';
+    sorted.forEach((m, i) => {
+      cont.innerHTML += `
+        <div class="sc-row ${i === 0 ? 'top1' : ''}">
+          <div class="sc-rank ${i < 3 ? 'top' : ''}">${i < 3 ? ['🥇','🥈','🥉'][i] : i+1}</div>
+          <div class="sc-name">${m.nombre}</div>
+          <div class="sc-bar-wrap">
+            <div class="sc-bar" style="width:${(m.pts/maxPts*100).toFixed(0)}%"></div>
+          </div>
+          <div class="sc-pts">${m.pts} pts</div>
+        </div>`;
+    });
+  });
+}
+</script>
+</body>
+</html>
