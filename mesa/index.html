@@ -316,6 +316,7 @@ function startListening() {
 
       case 'caso_activo':
         if (!caso) break;
+        if (ev.caso_actual !== casoAnterior) mesaBulletsBuilt = false;
         document.getElementById('caso-num-lbl').textContent = `Caso Clínico ${ev.caso_actual} de ${TOTAL_CASOS}`;
         document.getElementById('caso-name').textContent = caso.titulo;
         document.getElementById('caso-movie').textContent = caso.pelicula;
@@ -372,38 +373,57 @@ function renderVoting(caso, casoNum) {
   });
 }
 
-// ── Render bullets en mesa (lista vertical) ──
+// ── Render bullets en mesa (lista acumulativa) ──
+let mesaBulletsBuilt = false;
+
 function renderMesaBullets(caso, n) {
   const cont = document.getElementById('mesa-bullets');
   if (!cont) return;
-  cont.innerHTML = '';
-  caso.bullets.forEach((b, i) => {
-    if (i >= n) return;
-    const el = document.createElement('div');
-    el.style.cssText = `
-      background:var(--surface); border:1px solid rgba(201,168,76,${b.tipo==='nivel_alerta'?'0.6':'0.2'});
-      border-radius:10px; padding:10px 14px;
-      font-family:-apple-system,sans-serif; font-size:0.8em;
-      animation:slideIn 0.4s ease;
-      ${b.tipo==='nivel_alerta'?'background:rgba(58,46,16,0.8);':''}`;
 
-    if (b.tipo === 'identidad') {
-      el.innerHTML = `<strong style="color:var(--gold);font-size:1.05em;">${b.nombre}</strong> · ${b.edad}<br>
-        <span style="opacity:0.5;font-size:0.9em;">${b.ocupacion} · ${b.ciudad}</span>`;
-    } else if (b.tipo === 'sintoma') {
-      el.innerHTML = `${b.icono} <strong style="color:var(--gold-light)">${b.titulo}</strong><br>
-        <span style="opacity:0.55;">${b.detalle}</span>`;
-    } else if (b.tipo === 'nivel_alerta') {
-      el.innerHTML = `<strong style="color:var(--gold)">${b.titulo}</strong><br>
-        <span style="color:var(--gold);font-size:1.05em;">${b.valor}</span>`;
-    } else if (b.tipo === 'nivel') {
-      el.innerHTML = `<strong style="color:var(--gold-light)">${b.titulo}</strong><br>
-        <span style="opacity:0.7;">${b.valor}</span>`;
-    } else if (b.tipo === 'labs') {
-      el.innerHTML = `<span style="opacity:0.65;">${b.texto}</span>`;
-    }
-    cont.appendChild(el);
-  });
+  // Construir estructura si es nuevo caso
+  if (!mesaBulletsBuilt || cont.dataset.caso !== String(caso.titulo)) {
+    cont.innerHTML = '';
+    cont.dataset.caso = caso.titulo;
+    caso.bullets.forEach((b, i) => {
+      const el = document.createElement('div');
+      el.id = `mb-${i}`;
+      el.style.cssText = `
+        display:flex; align-items:flex-start; gap:10px;
+        padding:10px 0; border-bottom:1px solid rgba(201,168,76,0.08);
+        font-family:-apple-system,sans-serif; font-size:0.82em;
+        opacity:0; transform:translateX(12px);
+        transition:opacity 0.4s ease, transform 0.4s ease;
+        ${b.tipo==='nivel_alerta'?'background:rgba(58,46,16,0.5);border-radius:8px;padding:10px 10px;border-bottom:none;margin-bottom:2px;':''}`;
+
+      const dot = `<div style="width:7px;height:7px;border-radius:50%;background:var(--gold);margin-top:4px;flex-shrink:0;${b.tipo==='nivel_alerta'?'box-shadow:0 0 8px rgba(201,168,76,0.8);':''}"></div>`;
+
+      let body = '';
+      if (b.tipo === 'identidad') {
+        body = `<div><strong style="color:var(--gold);font-size:1.1em;">${b.nombre}</strong> · ${b.edad}<br>
+          <span style="opacity:0.45;font-size:0.9em;">${b.ocupacion} · ${b.ciudad}</span></div>`;
+      } else if (b.tipo === 'sintoma') {
+        body = `<div>${b.icono} <strong style="color:var(--gold-light)">${b.titulo}</strong><br>
+          <span style="opacity:0.5;">${b.detalle}</span></div>`;
+      } else if (b.tipo === 'nivel_alerta') {
+        body = `<div><strong style="color:var(--gold)">${b.titulo}</strong> — <span style="color:var(--gold)">${b.valor}</span></div>`;
+      } else if (b.tipo === 'nivel') {
+        body = `<div><strong style="color:var(--gold-light)">${b.titulo}</strong> — <span style="opacity:0.7;">${b.valor}</span></div>`;
+      } else if (b.tipo === 'labs') {
+        body = `<div style="opacity:0.55;">${b.texto}</div>`;
+      }
+      el.innerHTML = dot + body;
+      cont.appendChild(el);
+    });
+    mesaBulletsBuilt = true;
+  }
+
+  // Revelar hasta N
+  for (let i = 0; i < 6; i++) {
+    const el = document.getElementById(`mb-${i}`);
+    if (!el) continue;
+    if (i < n) { el.style.opacity = '1'; el.style.transform = 'translateX(0)'; }
+    else        { el.style.opacity = '0'; el.style.transform = 'translateX(12px)'; }
+  }
 }
 
 // ── Submit vote ──

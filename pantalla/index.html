@@ -106,45 +106,56 @@ html, body { height:100%; background:var(--bg); color:var(--gold-light); font-fa
 }
 @keyframes ecgDraw { 0%{stroke-dashoffset:600} 100%{stroke-dashoffset:0} }
 
-/* ── RIGHT: Bento cards ── */
+/* ── RIGHT: Bullet panel ── */
 .bento-right {
-  padding:28px 32px 24px 16px;
-  display:flex; flex-direction:column; gap:10px;
+  padding:32px 36px 28px 20px;
+  display:flex; flex-direction:column;
   justify-content:center;
   background:var(--bg);
+  overflow:hidden;
 }
 
-/* CARD: identidad */
-.card {
-  background:var(--surface); border:1px solid rgba(201,168,76,0.22);
-  border-radius:12px; padding:16px 20px;
-  opacity:0; transform:translateY(14px) scale(0.98);
+.bullet-panel {
+  display:flex; flex-direction:column; gap:0;
+  width:100%;
+}
+
+/* Cada bullet entra con animación */
+.bullet-item {
+  display:flex; align-items:flex-start; gap:16px;
+  padding:14px 0;
+  border-bottom:1px solid rgba(201,168,76,0.08);
+  opacity:0; transform:translateX(20px);
   transition:opacity .5s ease, transform .5s ease;
-  pointer-events:none;
 }
-.card.show { opacity:1; transform:translateY(0) scale(1); }
+.bullet-item:first-child { padding-top:0; }
+.bullet-item:last-child { border-bottom:none; }
+.bullet-item.show { opacity:1; transform:translateX(0); }
 
-.card-identidad .ci-nombre { font-size:1.7em; color:var(--gold); font-weight:400; line-height:1.1; }
-.card-identidad .ci-edad { font-size:1em; color:var(--gold-light); opacity:.75; margin-left:8px; }
-.card-identidad .ci-sub { font-size:.8em; color:var(--gold-light); opacity:.5; margin-top:4px; font-family:sans-serif; letter-spacing:.5px; }
+/* Punto decorativo */
+.b-dot {
+  width:8px; height:8px; border-radius:50%; background:var(--gold);
+  margin-top:6px; flex-shrink:0;
+  box-shadow:0 0 6px rgba(201,168,76,0.5);
+}
+.b-dot.alerta { background:#C9A84C; box-shadow:0 0 10px rgba(201,168,76,0.8); }
 
-/* CARD: síntomas — fila de 2 */
-.cards-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.card-sintoma { }
-.card-sintoma .cs-icon { font-size:1.1em; margin-bottom:6px; display:inline-block; }
-.card-sintoma .cs-titulo { font-size:.95em; color:var(--gold-light); font-weight:400; line-height:1.3; }
-.card-sintoma .cs-detalle { font-size:.72em; opacity:.55; margin-top:3px; font-family:sans-serif; line-height:1.4; }
+.b-body { flex:1; }
+.b-titulo { font-size:1.05em; color:var(--gold-light); line-height:1.3; }
+.b-titulo strong { color:var(--gold); font-weight:400; }
+.b-detalle { font-size:.78em; color:var(--gold-light); opacity:.5; margin-top:3px; font-family:sans-serif; line-height:1.5; }
 
-/* CARD: niveles — fila de 2 */
-.card-nivel-alerta { background:var(--amber); border-color:var(--amber-border); }
-.card-nivel-alerta .cn-titulo { font-size:.72em; text-transform:uppercase; letter-spacing:1px; opacity:.6; font-family:sans-serif; }
-.card-nivel-alerta .cn-valor { font-size:1.05em; color:var(--gold); margin-top:4px; }
-.card-nivel .cn-titulo { font-size:.72em; text-transform:uppercase; letter-spacing:1px; opacity:.6; font-family:sans-serif; }
-.card-nivel .cn-valor { font-size:1.05em; color:var(--gold-light); margin-top:4px; }
+/* Bullet de identidad: más grande */
+.bullet-item.identidad .b-titulo { font-size:1.5em; }
+.bullet-item.identidad .b-titulo strong { font-size:1em; }
 
-/* CARD: labs */
-.card-labs { text-align:center; }
-.card-labs .cl-texto { font-size:.85em; color:var(--gold-light); opacity:.7; font-family:sans-serif; letter-spacing:.5px; }
+/* Bullet de nivel alerta: resaltado */
+.bullet-item.alerta {
+  background:rgba(58,46,16,0.5);
+  border-radius:8px; padding:14px 12px;
+  border-bottom:none; margin-bottom:2px;
+}
+.bullet-item.alerta .b-titulo { color:var(--gold); }
 
 /* ══════════════════════════════
    VOTACIÓN ABIERTA
@@ -270,8 +281,10 @@ html, body { height:100%; background:var(--bg); color:var(--gold-light); font-fa
     </div>
   </div>
 
-  <!-- RIGHT: Bento cards -->
-  <div class="bento-right" id="bento-right"></div>
+  <!-- RIGHT: Bullet panel -->
+  <div class="bento-right">
+    <div class="bullet-panel" id="bullet-panel"></div>
+  </div>
 </div>
 
 <!-- ══ VOTACIÓN ABIERTA ══ -->
@@ -335,61 +348,61 @@ function show(id) {
   document.getElementById(id).classList.add('active');
 }
 
-// ── Build bento cards structure (hidden) ──
+// ── Build bullet panel (all hidden) ──
 function buildBento(casoNum) {
   const caso = CASOS_DATA[casoNum];
   if (!caso) return;
   document.getElementById('bento-badge').textContent = `Caso ${casoNum} de ${TOTAL_CASOS}`;
-  const right = document.getElementById('bento-right');
-  right.innerHTML = '';
+  const panel = document.getElementById('bullet-panel');
+  panel.innerHTML = '';
 
-  const bullets = caso.bullets;
+  caso.bullets.forEach((b, i) => {
+    const el = document.createElement('div');
+    let extraClass = '';
+    let html = '';
 
-  // Card 0: identidad
-  const b0 = bullets[0];
-  right.innerHTML += `
-    <div class="card card-identidad" id="card-0">
-      <span class="ci-nombre">${b0.nombre}</span><span class="ci-edad">${b0.edad}</span>
-      <div class="ci-sub">${b0.ocupacion} · ${b0.ciudad}</div>
-    </div>`;
+    if (b.tipo === 'identidad') {
+      extraClass = 'identidad';
+      html = `<div class="b-dot"></div>
+        <div class="b-body">
+          <div class="b-titulo"><strong>${b.nombre}</strong> &nbsp;·&nbsp; ${b.edad}</div>
+          <div class="b-detalle">${b.ocupacion} &nbsp;·&nbsp; ${b.ciudad}</div>
+        </div>`;
+    } else if (b.tipo === 'sintoma') {
+      html = `<div class="b-dot"></div>
+        <div class="b-body">
+          <div class="b-titulo">${b.icono}&nbsp; <strong>${b.titulo}</strong></div>
+          <div class="b-detalle">${b.detalle}</div>
+        </div>`;
+    } else if (b.tipo === 'nivel_alerta') {
+      extraClass = 'alerta';
+      html = `<div class="b-dot alerta"></div>
+        <div class="b-body">
+          <div class="b-titulo"><strong>${b.titulo}</strong> &nbsp;—&nbsp; ${b.valor}</div>
+        </div>`;
+    } else if (b.tipo === 'nivel') {
+      html = `<div class="b-dot"></div>
+        <div class="b-body">
+          <div class="b-titulo"><strong>${b.titulo}</strong> &nbsp;—&nbsp; ${b.valor}</div>
+        </div>`;
+    } else if (b.tipo === 'labs') {
+      html = `<div class="b-dot"></div>
+        <div class="b-body">
+          <div class="b-titulo" style="opacity:.65;font-size:.9em;">${b.texto}</div>
+        </div>`;
+    }
 
-  // Cards 1-2: síntomas (fila)
-  right.innerHTML += `<div class="cards-row" id="row-sintomas">
-    <div class="card card-sintoma" id="card-1">
-      <div class="cs-icon">${bullets[1]?.icono || '🔴'}</div>
-      <div class="cs-titulo">${bullets[1]?.titulo || ''}</div>
-      <div class="cs-detalle">${bullets[1]?.detalle || ''}</div>
-    </div>
-    <div class="card card-sintoma" id="card-2">
-      <div class="cs-icon">${bullets[2]?.icono || '🔴'}</div>
-      <div class="cs-titulo">${bullets[2]?.titulo || ''}</div>
-      <div class="cs-detalle">${bullets[2]?.detalle || ''}</div>
-    </div>
-  </div>`;
-
-  // Cards 3-4: niveles (fila)
-  right.innerHTML += `<div class="cards-row" id="row-niveles">
-    <div class="card card-nivel-alerta" id="card-3">
-      <div class="cn-titulo">${bullets[3]?.titulo || ''}</div>
-      <div class="cn-valor">${bullets[3]?.valor || ''}</div>
-    </div>
-    <div class="card card-nivel" id="card-4">
-      <div class="cn-titulo">${bullets[4]?.titulo || ''}</div>
-      <div class="cn-valor">${bullets[4]?.valor || ''}</div>
-    </div>
-  </div>`;
-
-  // Card 5: labs
-  right.innerHTML += `
-    <div class="card card-labs" id="card-5">
-      <div class="cl-texto">${bullets[5]?.texto || ''}</div>
-    </div>`;
+    el.className = `bullet-item ${extraClass}`;
+    el.id = `bullet-${i}`;
+    el.innerHTML = html;
+    panel.appendChild(el);
+  });
 }
 
 // ── Reveal bullets up to N ──
 function revealBullets(n) {
   for (let i = 0; i < 6; i++) {
-    const el = document.getElementById(`card-${i}`);
+    const el = document.getElementById(`bullet-${i}`);
     if (el) el.classList.toggle('show', i < n);
   }
 }
